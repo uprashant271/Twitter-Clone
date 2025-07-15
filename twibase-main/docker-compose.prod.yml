@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    ports:
+      - "80:80"
+    volumes:
+      - static_volume:/app/static
+      - media_volume:/app/media
+    environment:
+      - DEBUG=0
+      - DJANGO_SETTINGS_MODULE=twipost.production_settings
+      - DATABASE_URL=postgres://twibase_user:twibase_password@db:5432/twibase_db
+    depends_on:
+      - db
+      - redis
+    networks:
+      - twibase_network
+
+  db:
+    image: postgres:15-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=twibase_db
+      - POSTGRES_USER=twibase_user
+      - POSTGRES_PASSWORD=twibase_password
+    networks:
+      - twibase_network
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - twibase_network
+
+volumes:
+  postgres_data:
+  static_volume:
+  media_volume:
+
+networks:
+  twibase_network:
+    driver: bridge

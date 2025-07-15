@@ -1,0 +1,39 @@
+services:
+  - type: web
+    name: twibase
+    env: python
+    plan: starter
+    buildCommand: |
+      pip install -r requirements.txt
+      cd src/twipost
+      python manage.py collectstatic --noinput
+      python manage.py migrate
+    startCommand: |
+      cd src/twipost
+      gunicorn twipost.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: twibase-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: 0
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: DISABLE_COLLECTSTATIC
+        value: 1
+
+  - type: redis
+    name: twibase-redis
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+
+databases:
+  - name: twibase-db
+    databaseName: twibase
+    user: twibase
+    plan: starter
